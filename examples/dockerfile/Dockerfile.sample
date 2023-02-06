@@ -1,0 +1,10 @@
+FROM ubuntu:22.04
+
+RUN apt-get -y update && apt-get -y install --no-install-recommends \
+        sudo python3 python3-setuptools python3-pip python3-psutil \
+    && rm -rf /var/lib/apt/lists/*
+
+#some minimal console utils
+RUN apt-get -y update && apt-get -y install --no-install-recommends \
+        less vim \
+    && rm -rf /var/lib/apt/lists/*

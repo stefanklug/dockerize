@@ -1,0 +1,106 @@
+#!/bin/bash
+set -e
+VERSION=0.1
+
+if [ "$1" = "--help" ]; then
+    echo "Dockerize Version $VERSION"
+    echo "Usage: $0 [command]"
+    exit 0
+fi
+
+
+source .dockerize
+
+TAGNAME=dockerize
+
+USERID=$(id -u)
+GROUPID=$(id -g)
+
+if [ -n "$DOCKERFILE" -a -n "$DOCKERIMAGE" ]; then
+    echo "Please specify either DOCKERIMAGE or DOCKERFILE, but not both"
+    exit 1
+fi
+
+if [ -z "$DOCKERFILE" -a -z "$DOCKERIMAGE" ]; then
+    echo "Please specify either DOCKERIMAGE or DOCKERFILE"
+    exit 1
+fi
+
+if [ -n "$DOCKERIMAGE" ]; then
+    PATCHED_DOCKERFILE=$(mktemp "$(pwd)/Dockerfile.dockerizeXXXXXXX")
+    echo "FROM $DOCKERIMAGE" >> $PATCHED_DOCKERFILE
+elif [ -n "$DOCKERFILE" ]; then
+    if [ ! -f "$DOCKERFILE" ]; then
+        echo "Dockerfile '$DOCKERFILE' does not exist."
+        exit 1
+    fi
+    # create a temporary dockerfile
+    f=$(realpath "$DOCKERFILE")
+    PATCHED_DOCKERFILE=$(mktemp "$f.dockerizeXXXXXXX")
+    cat $f > $PATCHED_DOCKERFILE
+else
+    echo "Please specify either DOCKERIMAGE or DOCKERFILE"
+    exit 1
+fi
+
+
+entrypoint_base64=$(base64 -w0 - << 'EOF'
+#!/bin/sh
+# This entrypoint 
+# - creates a user and group for the current uid/gid, if they don't exist.
+# - jumps to DOCKERIZE_DIR
+# - execs $@
+
+if ! which sudo; then 
+    echo "sudo is missing in the image"
+fi
+
+if ! getent group $(id -g) > /dev/null; then
+    /usr/sbin/groupadd -g $(id -g) group$(id -g)
+else
+    echo "Group with id $(id -g) exists."
+fi
+
+if ! getent passwd $(id -u) > /dev/null; then
+    /usr/sbin/useradd -u $(id -u) -g $(id -g) -m user$(id -u)
+else
+    echo "User with id $(id -u) exists."
+fi
+
+sudo chmod a-s /usr/sbin/useradd && sudo chmod a-s /usr/sbin/groupadd
+
+cd $DOCKERIZE_DIR
+unset DOCKERIZE_DIR
+exec "$@"
+EOF
+)
+
+cat << EOF >> "$PATCHED_DOCKERFILE"
+
+# prepare for dockerize
+RUN echo "$entrypoint_base64" | base64 -d - > /bin/entrypoint.sh && chmod +x /bin/entrypoint.sh
+RUN echo "ALL ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+# allow useradd and groupadd to be called from entrypoint
+RUN chmod a+s /usr/sbin/useradd && chmod a+s /usr/sbin/groupadd
+ENTRYPOINT [ "/bin/entrypoint.sh" ]
+EOF
+
+# if a image is used, build should be done without context
+if [ -n "$DOCKERIMAGE" ]; then
+    docker build -t $TAGNAME - < $PATCHED_DOCKERFILE
+else
+    docker build -f $PATCHED_DOCKERFILE -t $TAGNAME .
+fi
+
+rm $PATCHED_DOCKERFILE
+
+ARGS=""
+if [ "$DOCKERIZE_MOUNT_HOME" = "1" ]; then
+ ARGS="$ARGS -v $HOME:$HOME -e HOME=$HOME"
+fi
+
+if [ -n "$DOCKERIZE_ARGS" ]; then
+ ARGS="$ARGS $DOCKERIZE_ARGS"
+fi
+
+docker run --rm -ti -u $USERID:$GROUPID -v $(pwd):$(pwd) $ARGS -e DOCKERIZE_DIR=$(pwd) $TAGNAME /bin/bash
