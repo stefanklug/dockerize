@@ -66,9 +66,15 @@ else
 fi
 
 if ! getent passwd $(id -u) > /dev/null; then
-    /usr/sbin/useradd -u $(id -u) -g $(id -g) -m user$(id -u)
+    /usr/sbin/useradd -u $(id -u) -g $(id -g) -d $HOME user$(id -u)
+    sudo chown $(id -u):$(id -g) $HOME
 else
-    echo "User with id $(id -u) exists."
+    echo "ERROR: User with id $(id -u) exists. This causes all kinds of issues.\n"
+    echo "The easiest way to solve this is to add the following line to .dockerize:\n"
+    echo "DOCKERFILE_APPEND=\"\"\""
+    echo "  RUN userdel -r \\\$(getent passwd $(id -u) | cut -f 1 -d ':')\""
+    echo "\"\"\""
+    exit 1
 fi
 
 sudo chmod a-s /usr/sbin/useradd && sudo chmod a-s /usr/sbin/groupadd
@@ -84,8 +90,13 @@ cat << EOF >> "$PATCHED_DOCKERFILE"
 # prepare for dockerize
 RUN echo "$entrypoint_base64" | base64 -d - > /bin/entrypoint.sh && chmod +x /bin/entrypoint.sh
 RUN echo "ALL ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-# allow useradd and groupadd to be called from entrypoint
+# allow useradd and groupadd to be called from entrypoint without sudo
+# as the user that would do sudo doesn't exist, yet
 RUN chmod a+s /usr/sbin/useradd && chmod a+s /usr/sbin/groupadd
+
+# Create the home directory for the user, so that we can later chown it in cases
+# where the dockerized directory is a subdirectory of the home dir.
+RUN mkdir $HOME
 ENTRYPOINT [ "/bin/entrypoint.sh" ]
 EOF
 
@@ -114,11 +125,13 @@ fi
 
 ARGS=""
 if [ "$DOCKERIZE_MOUNT_HOME" = "1" ]; then
- ARGS="$ARGS -v $HOME:$HOME -e HOME=$HOME"
+ ARGS="$ARGS -v $HOME:$HOME"
 fi
+
+ARGS="$ARGS -e HOME=$HOME"
 
 if [ -n "$DOCKERIZE_ARGS" ]; then
  ARGS="$ARGS $DOCKERIZE_ARGS"
 fi
 
-docker run --rm -ti -u $USERID:$GROUPID -v $(pwd):$(pwd) $ARGS -e DOCKERIZE_DIR=$(pwd) $TAGNAME /bin/bash
+docker run --rm -ti -u $USERID:$GROUPID $ARGS -v $(pwd):$(pwd) -e DOCKERIZE_DIR=$(pwd) $TAGNAME /bin/bash
