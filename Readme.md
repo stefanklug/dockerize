@@ -24,15 +24,18 @@ dockerize
 
 dockerize accepts the following options inside the .dockerize file
 
-`DOCKERIMAGE` The docker image to use. Either `DOCKERIMAGE` or `DOCKERFILE` must be specified.
+`DOCKERIMAGE` The docker image to use. Either `DOCKERIMAGE` or `DOCKERFILE` must
+be specified.
 
-`DOCKERFILE` The dockerfile to use. **Warning** If you use that option you should also create 
-a `.dockerignore` file to prevent that your whole projects gets sent as context to the docker 
-daemon
+`DOCKERFILE` The dockerfile to use. **Warning** If you use that option you
+should also create a `.dockerignore` file to prevent that your whole projects
+gets sent as context to the docker daemon
 
-`DOCKERIZE_MOUNT_HOME` Either 1 or 0. If this is 1, your home directory gets mounted into the 
-container at the same path as on the host
 
-`DOCKERIZE_ARGS`Additional arguments added to `docker run`. This can be handy for example to 
-limit the available cpu usage in the container by specifying "--cpus=6"
+`DOCKERIZE_MOUNT_HOME` Either 1 or 0. If this is 1, your home directory gets
+mounted into the container at the same path as on the host
+
+`DOCKERIZE_ARGS`Additional arguments added to `docker run`. This can be handy
+for example to limit the available cpu usage in the container by specifying
+"--cpus=6"
 

@@ -46,12 +46,12 @@ fi
 
 entrypoint_base64=$(base64 -w0 - << 'EOF'
 #!/bin/sh
-# This entrypoint 
+# This entrypoint
 # - creates a user and group for the current uid/gid, if they don't exist.
 # - jumps to DOCKERIZE_DIR
 # - execs $@
 
-if ! which sudo; then 
+if ! which sudo; then
     echo "sudo is missing in the image"
 fi
 
@@ -85,7 +85,7 @@ RUN chmod a+s /usr/sbin/useradd && chmod a+s /usr/sbin/groupadd
 ENTRYPOINT [ "/bin/entrypoint.sh" ]
 EOF
 
-# if a image is used, build should be done without context
+# if an image is used, build should be done without context
 if [ -n "$DOCKERIMAGE" ]; then
     docker build -t $TAGNAME - < $PATCHED_DOCKERFILE
 else
