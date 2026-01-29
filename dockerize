@@ -85,6 +85,9 @@ RUN chmod a+s /usr/sbin/useradd && chmod a+s /usr/sbin/groupadd
 ENTRYPOINT [ "/bin/entrypoint.sh" ]
 EOF
 
+# Don't exit on error so we can remove the dockerfile
+set +e
+
 # if an image is used, build should be done without context
 if [ -n "$DOCKERIMAGE" ]; then
     docker build -t $TAGNAME - < $PATCHED_DOCKERFILE
@@ -92,7 +95,18 @@ else
     docker build -f $PATCHED_DOCKERFILE -t $TAGNAME .
 fi
 
+ret=$?
+
+# restore exit on error
+set -e
+
 rm $PATCHED_DOCKERFILE
+
+if [ $ret -ne 0 ]; then
+    echo "Docker build failed"
+    exit $ret
+fi
+
 
 ARGS=""
 if [ "$DOCKERIZE_MOUNT_HOME" = "1" ]; then
