@@ -66,9 +66,10 @@ else
 fi
 
 if ! getent passwd $(id -u) > /dev/null; then
-    /usr/sbin/useradd -u $(id -u) -g $(id -g) -m user$(id -u)
+    /usr/sbin/useradd -u $(id -u) -g $(id -g) -d $HOME -m user$(id -u)
 else
-    echo "User with id $(id -u) exists."
+    echo "User with id $(id -u) exists. This causes all kinds of issues. Abort."
+    exit 1
 fi
 
 sudo chmod a-s /usr/sbin/useradd && sudo chmod a-s /usr/sbin/groupadd
