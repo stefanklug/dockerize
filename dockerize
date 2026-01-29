@@ -43,6 +43,10 @@ else
     exit 1
 fi
 
+if [ -n "$DOCKERFILE_APPEND" ]; then
+    echo "$DOCKERFILE_APPEND" >> $PATCHED_DOCKERFILE
+fi
+
 
 entrypoint_base64=$(base64 -w0 - << 'EOF'
 #!/bin/sh

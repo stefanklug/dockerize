@@ -31,6 +31,9 @@ be specified.
 should also create a `.dockerignore` file to prevent that your whole projects
 gets sent as context to the docker daemon
 
+`DOCKERFILE_APPEND` Additional content that is added to the temporary
+dockerfile. Especially useful with `DOCKERIMAGE` to proved additional commands.
+Can be used together with `DOCKERIMAGE` and `DOCKERFILE`.
 
 `DOCKERIZE_MOUNT_HOME` Either 1 or 0. If this is 1, your home directory gets
 mounted into the container at the same path as on the host
