@@ -57,6 +57,7 @@ entrypoint_base64=$(base64 -w0 - << 'EOF'
 
 if ! which sudo; then
     echo "sudo is missing in the image"
+    exit 1
 fi
 
 if ! getent group $(id -g) > /dev/null; then
@@ -72,7 +73,7 @@ else
     exit 1
 fi
 
-sudo chmod a-s /usr/sbin/useradd && sudo chmod a-s /usr/sbin/groupadd
+#sudo chmod a-s /usr/sbin/useradd && sudo chmod a-s /usr/sbin/groupadd
 
 cd $DOCKERIZE_DIR
 unset DOCKERIZE_DIR
