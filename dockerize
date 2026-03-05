@@ -9,6 +9,17 @@ if [ "$1" = "--help" ]; then
 fi
 
 
+DOCKERIZE_DIR=$(pwd)
+
+while [ ! -f ".dockerize" -a $(pwd) != "/" ]; do
+    cd ..
+done
+
+if [ ! -f ".dockerize" ]; then
+    echo "No .dockerize file found in the current directory or any parent directories."
+    exit 1
+fi
+
 source .dockerize
 
 TAGNAME=dockerize
@@ -134,4 +145,4 @@ if [ -n "$DOCKERIZE_ARGS" ]; then
  ARGS="$ARGS $DOCKERIZE_ARGS"
 fi
 
-docker run --rm -ti -u $USERID:$GROUPID $ARGS -v $(pwd):$(pwd) -e DOCKERIZE_DIR=$(pwd) $TAGNAME /bin/bash
+docker run --rm -ti -u $USERID:$GROUPID $ARGS -v $(pwd):$(pwd) -e DOCKERIZE_DIR=$DOCKERIZE_DIR $TAGNAME /bin/bash
