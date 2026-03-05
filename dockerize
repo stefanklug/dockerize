@@ -68,6 +68,17 @@ entrypoint_base64=$(base64 -w0 - << 'EOF'
 
 if ! which sudo; then
     echo "sudo is missing in the image"
+    exit 1
+fi
+
+# Ensure we can sudo, which might be problematic in qemu environments
+if sudo true 2>&1 | grep "effective uid is not 0"; then
+    echo "sudo is not working properly. If this is running using binfmt extensions"
+    echo "and qemu, the registration might be insufficient. To solve this one can"
+    echo "register binfmt extensions with extended permissions."
+    echo "ATTENTION: This might be a security risk, so handle with care:"
+    echo "docker run --rm --privileged multiarch/qemu-user-static --reset --persistent yes --credential yes"
+    exit 1
 fi
 
 if ! getent group $(id -g) > /dev/null; then
