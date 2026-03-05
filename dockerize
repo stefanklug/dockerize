@@ -4,6 +4,7 @@ VERSION=0.1
 
 if [ "$1" = "--help" ]; then
     echo "Dockerize Version $VERSION"
+    echo "See https://github.com/stefanklug/dockerize"
     echo "Usage: $0 [command]"
     exit 0
 fi
@@ -66,7 +67,7 @@ entrypoint_base64=$(base64 -w0 - << 'EOF'
 # - jumps to DOCKERIZE_DIR
 # - execs $@
 
-if ! which sudo; then
+if ! which sudo > /dev/null; then
     echo "sudo is missing in the image"
     exit 1
 fi
@@ -100,6 +101,8 @@ else
 fi
 
 sudo chmod a-s /usr/sbin/useradd && sudo chmod a-s /usr/sbin/groupadd
+
+echo "You got dockerized!"
 
 cd $DOCKERIZE_DIR
 unset DOCKERIZE_DIR
